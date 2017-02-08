@@ -32,4 +32,4 @@ task (write_version) {
   println (gtFile)
   gtFile.write(" Version: ${majorV} build: ${buildN} ")
 }
-
+increment_version.mustRunAfter build
