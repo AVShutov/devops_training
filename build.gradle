@@ -11,25 +11,31 @@ dependencies {
 }
 
 task (increment_version) {
-  Properties gprops = new Properties()
-  File gpropsFile = new File('./gradle.properties')
-  gprops.load(gpropsFile.newDataInputStream())
-  Integer buildnum = ( ((gprops.getProperty('BuildNumber')) as BigDecimal) + 1 )
-  gprops.setProperty('BuildNumber', buildnum.toString())
-  gprops.store(gpropsFile.newWriter(), null)
-  gprops.load(gpropsFile.newDataInputStream())
+  doLast {
+    Properties gprops = new Properties()
+    File gpropsFile = new File('./gradle.properties')
+    gprops.load(gpropsFile.newDataInputStream())
+    Integer buildnum = ( ((gprops.getProperty('BuildNumber')) as BigDecimal) + 1 )
+    gprops.setProperty('BuildNumber', buildnum.toString())
+    gprops.store(gpropsFile.newWriter(), null)
+    gprops.load(gpropsFile.newDataInputStream())
+  }
 }
 
 task (write_version) {
-  Properties gprops = new Properties()
-  File gtFile = new File('./src/main/resources/greeting.txt')  
-  File gpropsFile = new File('./gradle.properties')
-  gprops.load(gpropsFile.newDataInputStream())  
-  String majorV = gprops.getProperty('MajorVersion')
-  String buildN = gprops.getProperty('BuildNumber')
-  println (majorV)
-  println (buildN)
-  println (gtFile)
-  gtFile.write(" Version: ${majorV} build: ${buildN} ")
+  doLast {
+    Properties gprops = new Properties()
+    File gtFile = new File('./build/resources/main/greeting.txt')  
+    File gpropsFile = new File('./gradle.properties')
+    gprops.load(gpropsFile.newDataInputStream())  
+    String majorV = gprops.getProperty('MajorVersion')
+    String buildN = gprops.getProperty('BuildNumber')
+    println (majorV)
+    println (buildN)
+    println (gtFile)
+    gtFile.write(" Version: ${majorV} build: ${buildN} ")
+  }
 }
-increment_version.mustRunAfter build
+
+war.dependsOn write_version
+write_version.mustRunAfter processResources
