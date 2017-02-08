@@ -53,7 +53,7 @@ node ('master'){
       sh "wget -O - -q http://$TOMCAT_USER:$TOMCAT_PASSWD@192.168.20.12:8080/manager/text/undeploy?path=/new/task3"
       sh "curl 'http://192.168.20.13:8081/nexus/content/repositories/training/task3/${VER}.${BUI}/task3.war' | curl -T - -u $TOMCAT_USER:$TOMCAT_PASSWD 'http://192.168.20.12:8080/manager/text/deploy?path=/new/task3&update=true'"
 	  sleep 30
-      httpRequest httpMode: 'POST', url: "http://192.168.20.10/jk-status?cmd=update&from=list&w=lb&sw=tomcat1&vwa=0"
+      httpRequest httpMode: 'POST', url: "http://192.168.20.10/jk-status?cmd=update&from=list&w=lb&sw=tomcat2&vwa=0"
   }
 }
 }
