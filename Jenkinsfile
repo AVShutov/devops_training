@@ -46,18 +46,15 @@ node ('master'){
   
 
     stage ('Build image') {
-        sh "docker build --build-arg VERSION=${VERSION} -t localhost:5000/task4:${VERSION} /vagrant/"
-		sleep (10)
+        sh "docker build --build-arg VERSION=${VERSION} -t localhost:5000/task4:${VERSION} ."
 		sh "docker push localhost:5000/task4:${VERSION}"
-		sleep (10)
     }
 }
   node('node_remote') {
   stage ('Run on remote machine') {
         sh "docker pull 192.168.20.11:5000/task4:${VERSION}"
-	    sleep (10)
         sh "docker run -d -p 8082:8080 --name=task4c 192.168.20.11:5000/task4:${VERSION}"
-	    sleep (10)
+        sleep (10)
 	    deploy_valid(TOMCAT,VERSION)
 	    sh "docker stop task4c"
         sh "docker rm task4c"
