@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.9">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <org.biouno.unochoice.ChoiceParameter plugin="uno-choice@1.5.2">
+          <name>Environment</name>
+          <description></description>
+          <randomName>choice-parameter-595593060036281</randomName>
+          <visibleItemCount>1</visibleItemCount>
+          <script class="org.biouno.unochoice.model.GroovyScript">
+            <secureScript plugin="script-security@1.25">
+              <script>return &apos;knife environment list&apos;.execute().text.tokenize()</script>
+              <sandbox>false</sandbox>
+            </secureScript>
+            <secureFallbackScript plugin="script-security@1.25">
+              <script></script>
+              <sandbox>false</sandbox>
+            </secureFallbackScript>
+          </script>
+          <projectName>task7</projectName>
+          <choiceType>PT_SINGLE_SELECT</choiceType>
+          <filterable>false</filterable>
+        </org.biouno.unochoice.ChoiceParameter>
+        <org.biouno.unochoice.ChoiceParameter plugin="uno-choice@1.5.2">
+          <name>Role</name>
+          <description></description>
+          <randomName>choice-parameter-595807973886528</randomName>
+          <visibleItemCount>1</visibleItemCount>
+          <script class="org.biouno.unochoice.model.GroovyScript">
+            <secureScript plugin="script-security@1.25">
+              <script>return &apos;knife role list&apos;.execute().text.tokenize()</script>
+              <sandbox>false</sandbox>
+            </secureScript>
+            <secureFallbackScript plugin="script-security@1.25">
+              <script></script>
+              <sandbox>false</sandbox>
+            </secureFallbackScript>
+          </script>
+          <projectName>task7</projectName>
+          <choiceType>PT_SINGLE_SELECT</choiceType>
+          <filterable>false</filterable>
+        </org.biouno.unochoice.ChoiceParameter>
+        <org.biouno.unochoice.ChoiceParameter plugin="uno-choice@1.5.2">
+          <name>Version</name>
+          <description></description>
+          <randomName>choice-parameter-600687724503102</randomName>
+          <visibleItemCount>1</visibleItemCount>
+          <script class="org.biouno.unochoice.model.GroovyScript">
+            <secureScript plugin="script-security@1.25">
+              <script>return &apos;ls /usr/local/sonatype-work/nexus/storage/training/task4&apos;.execute().text.tokenize()</script>
+              <sandbox>false</sandbox>
+            </secureScript>
+            <secureFallbackScript plugin="script-security@1.25">
+              <script></script>
+              <sandbox>false</sandbox>
+            </secureFallbackScript>
+          </script>
+          <projectName>task7</projectName>
+          <choiceType>PT_SINGLE_SELECT</choiceType>
+          <filterable>false</filterable>
+        </org.biouno.unochoice.ChoiceParameter>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.25">
+    <script>def chef_env = &apos;/vagrant/chef-repo/environments&apos;
+def chef_cb = &apos;/vagrant/chef-repo/cookbooks&apos;
+def chef_recipe = &apos;docker_run_1&apos;
+def task = &apos;task7&apos;
+
+node(&apos;master&apos;){
+    stage(&apos;Update versions&apos;){
+        sh &quot;sed -i &apos;/\&quot;${chef_recipe}\&quot;:/c\\\&quot;${chef_recipe}\&quot;: \&quot;= $Version\&quot;&apos; ${chef_env}/${Environment}.json&quot;
+        sh &quot;sed -i \&quot;/version /c\\version \&apos;\&quot;$Version\&quot;\&apos;\&quot; ${chef_cb}/${chef_recipe}/metadata.rb&quot;
+        sh &quot;sed -i \&quot;/image_version/c\\default[&apos;version&apos;]=\&apos;\&quot;$Version\&quot;\&apos;\&quot; ${chef_cb}/${chef_recipe}/attributes/default.rb&quot;
+    }
+    stage(&apos;Upload cookbook to chef server&apos;){
+        sh &quot;berks install -b ${chef_cb}/${chef_recipe}/Berksfile &amp;&amp; berks upload -b ${chef_cb}/${chef_recipe}/Berksfile&quot;
+        sh &quot;knife environment from file ${chef_env}/${Environment}.json&quot;
+    }
+    stage(&apos;Push changes to github&apos;){
+        withCredentials([usernameColonPassword(credentialsId: &apos;90d738ad-cfac-41fd-ab73-368dcacd77ff&apos;, variable: &apos;GIT_CREDENTIALS&apos;)]) {
+            sh (&apos;git config --global http.proxy http://10.4.252.10:3128&apos;)
+            sh (&apos;git config --global https.proxy https://10.4.252.10:3128&apos;)
+            sh &quot;cp -R /vagrant/chef-repo .&quot;
+            sh &quot;git config user.email &apos;shutoff.alexey@gmail.com&apos;&quot;
+            sh &quot;git config user.name &apos;AVShutov&apos;&quot;
+            sh &apos;git config push.default simple&apos;
+            sh &apos;git add gradle.properties&apos;
+            sh &quot;git commit -m &apos;$Version&apos;&quot;
+            sh &quot;git push https://${GIT_CREDENTIALS}@github.com/AVShutov/devops_training.git ${task}&quot; 
+        }
+    }
+    stage(&apos;Start chef-client&apos;) {
+            withCredentials([usernamePassword(credentialsId: &apos;b670d51f-04f5-4117-a895-5d26a242ef1d&apos;, 
+            passwordVariable: &apos;chef_passwd&apos;, usernameVariable: &apos;chef_user&apos;)]) {
+            sh &quot;knife ssh &apos;chef_environment:${Environment} AND role:${Role}&apos; &apos;chef-client&apos; -x ${chef_user} -P ${chef_passwd}&quot;
+
+        }
+    }
+}</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+</flow-definition>

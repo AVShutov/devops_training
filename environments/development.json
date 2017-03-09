@@ -1,0 +1,15 @@
+{
+  "name": "development",
+  "description": "",
+  "cookbook_versions": {
+    "docker_run_1": "= 1.0.33"
+  },
+  "json_class": "Chef::Environment",
+  "chef_type": "environment",
+  "default_attributes": {
+
+  },
+  "override_attributes": {
+
+  }
+}

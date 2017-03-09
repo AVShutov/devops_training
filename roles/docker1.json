@@ -1,0 +1,19 @@
+{
+  "name": "docker1",
+  "description": "",
+  "json_class": "Chef::Role",
+  "default_attributes": {
+
+  },
+  "override_attributes": {
+
+  },
+  "chef_type": "role",
+  "run_list": [
+    "recipe[docker_install]",
+    "recipe[docker_run_1]"
+  ],
+  "env_run_lists": {
+
+  }
+}
